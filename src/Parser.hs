@@ -23,16 +23,30 @@ module Parser where
   char :: Char -> Parser Char
   char c = satisfy (==c)
 
+  string :: String -> Parser String
+  string s = sequence $ char <$> s
+
+
   -- Monadic API
   instance Functor Parser where
-    fmap = undefined
+    -- pssst using monad to define map
+    fmap f fa = fa >>= pure . f
 
   instance Applicative Parser where
-    (<*>)  = undefined
-    pure a = Parser (\s -> (Right a, s))
+    -- pssst using monad to define apply
+    fab <*> fa = fab >>= (<$> fa)
+    pure a     = Parser (\s -> (Right a, s))
+
+  bindParser :: Parser a -> (a -> Parser b) -> Parser b
+  bindParser fb afb = Parser p
+    where
+      p s =
+        case parse fb s of
+          (Right a, s') -> parse (afb a) s'
+          (Left err, s') -> (Left err, s')
 
   instance Monad Parser where
-    (>>=)  = undefined
+    (>>=)  = bindParser
     return = pure
 
 
